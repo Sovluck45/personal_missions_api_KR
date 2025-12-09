@@ -1,0 +1,58 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.section h3 {
+    margin-top: 0;
+}
+
+input,
+button {
+    padding: 5px;
+    margin: 5px 0;
+}
+
+.mission {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 3px;
+}
+
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+
+#statusMessage {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 3px;
+    display: none;
+}
+
+.status-error {
+    background-color: #ffe6e6;
+    border: 1px solid #ffcccc;
+}
+
+.status-success {
+    background-color: #e6ffe6;
+    border: 1px solid #ccffcc;
+}
