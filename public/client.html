@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Клиент персональных миссий</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .section h3 {
+            margin-top: 0;
+        }
+
+        input,
+        button,
+        select {
+            padding: 5px;
+            margin: 5px 0;
+        }
+
+        .mission {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        #statusMessage {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        .status-error {
+            background-color: #ffe6e6;
+            border: 1px solid #ffcccc;
+        }
+
+        .status-success {
+            background-color: #e6ffe6;
+            border: 1px solid #ccffcc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Клиент персональных миссий</h1>
+
+        <div id="statusMessage"></div>
+
+        <div class="section">
+            <h3>Управление пользователем</h3>
+            <label for="userIdInput">Введите ID пользователя:</label><br>
+            <input type="text" id="userIdInput" placeholder="Например, user123"><br>
+            <button onclick="setUserId()">Установить ID пользователя</button>
+            <p><strong>Текущий ID пользователя:</strong> <span id="currentUserId">Не установлен</span></p>
+        </div>
+
+        <div class="section">
+            <h3>Генерация новой миссии</h3>
+            <button onclick="generateMission()">Сгенерировать миссию</button>
+        </div>
+
+        <div class="section">
+            <h3>Просмотр миссий пользователя</h3>
+            <button onclick="getMissions()">Загрузить миссии</button>
+            <div id="missionsList"></div>
+        </div>
+
+        <div class="section">
+            <h3>Обновление прогресса миссии</h3>
+            <label for="missionIdToUpdate">ID миссии:</label><br>
+            <select id="missionIdToUpdate">
+                <option value="">-- Выберите миссию --</option>
+            </select><br>
+            <label for="progressDelta">Изменение прогресса (например, +1):</label><br>
+            <input type="number" id="progressDelta" value="1"><br>
+            <button onclick="updateProgress()">Обновить прогресс</button>
+        </div>
+
+        <div class="section">
+            <h3>Завершение миссии</h3>
+            <label for="missionIdToComplete">ID миссии для завершения:</label><br>
+            <select id="missionIdToComplete">
+                <option value="">-- Выберите миссию --</option>
+            </select><br>
+            <button onclick="completeMission()">Завершить миссию</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Базовый URL API
+        const API_BASE_URL = 'http://localhost:8082/api'; // Убедитесь, что ваш сервер Slim запущен на этом адресе
+        let currentUserId = null;
+        let currentMissions = []; // Хранит ВСЕ миссии текущего пользователя
+        let currentMissionsForLists = []; // Хранит миссии, доступные для взаимодействия (не завершённые)
+
+        // Функция для установки ID пользователя
+        function setUserId() {
+            const input = document.getElementById('userIdInput');
+            const userId = input.value.trim();
+            if (userId) {
+                currentUserId = userId;
+                document.getElementById('currentUserId').textContent = currentUserId;
+                showStatus(`ID пользователя установлен: ${currentUserId}`, 'success');
+                input.value = ''; // Очистить поле ввода
+                getMissions(); // Загрузить миссии после установки ID
+            } else {
+                showStatus('Пожалуйста, введите ID пользователя.', 'error');
+            }
+        }
+
+        // Функция для отображения сообщений статуса
+        function showStatus(message, type) { // type: 'error' or 'success'
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-${type}`;
+            statusDiv.style.display = 'block';
+
+            // Скрыть сообщение через 5 секунд
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Функция для генерации новой миссии
+        async function generateMission() {
+            if (!currentUserId) {
+                showStatus('Сначала установите ID пользователя.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/missions/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: currentUserId })
+                });
+
+                // Проверяем, успешен ли ответ
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                showStatus('Миссия сгенерирована!', 'success');
+                console.log('Сгенерированная миссия:', data); // Отладка
+                // Обновляем список миссий
+                getMissions();
+            } catch (error) {
+                console.error('Ошибка при генерации миссии:', error);
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Эти названия должны соответствовать ID типов миссии из БД (например, type_collect_wood)
+        const missionTypeNames = {
+            // Накопительные (Accumulative) и Убийства (Killing)
+            'type_collect_wood': 'Сбор древесины',
+            'type_defeat_goblins': 'Истребление гоблинов',
+            'type_hunt_wolves': 'Охота на волков',
+            'type_mine_stone': 'Добыча камня',
+            'type_fish': 'Рыбная ловля',
+            'type_collect_herbs': 'Сбор трав',
+            'type_kill_bears': 'Охота на медведей',
+            'type_mine_coal': 'Добыча угля',
+            'type_gather_apples': 'Сбор яблок',
+            'type_slay_orcs': 'Истребление орков',
+            'type_hunt_boars': 'Охота на кабанов',
+            'type_mine_iron': 'Добыча железа',
+            'type_farm_wheat': 'Выращивание пшеницы',
+            'type_collect_flowers': 'Сбор цветов',
+            'type_kill_dragons': 'Охота на драконов',
+            'type_mine_gold': 'Добыча золота',
+            'type_gather_mushrooms': 'Сбор грибов',
+            'type_slay_undead': 'Истребление нежити',
+            'type_hunt_deer': 'Охота на оленей',
+            'type_mine_diamonds': 'Добыча алмазов',
+            'type_collect_berries': 'Сбор ягод',
+            'type_kill_spiders': 'Уничтожение пауков',
+            'type_mine_copper': 'Добыча меди',
+            'type_farm_carrots': 'Выращивание моркови',
+            'type_gather_logs': 'Сбор брёвен',
+            'type_kill_slimes': 'Уничтожение слизней',
+            'type_mine_tin': 'Добыча олова',
+            'type_farm_potatoes': 'Выращивание картофеля',
+            'type_collect_feathers': 'Сбор перьев',
+            'type_kill_bats': 'Охота на летучих мышей',
+            'type_mine_silver': 'Добыча серебра',
+            'type_farm_cabbage': 'Выращивание капусты',
+            'type_gather_branches': 'Сбор веток',
+            'type_kill_skeletons': 'Истребление скелетов',
+            'type_mine_lead': 'Добыча свинца',
+            'type_farm_onions': 'Выращивание лука',
+            'type_collect_leaves': 'Сбор листьев',
+            'type_kill_zombies': 'Истребление зомби',
+            'type_mine_nickel': 'Добыча никеля',
+            'type_farm_turnips': 'Выращивание репы',
+
+            // Разовые (One-Time)
+            'type_find_treasure': 'Поиск сокровищ',
+            'type_deliver_message': 'Доставка сообщения',
+            'type_craft_potion': 'Изготовление зелья',
+            'type_rescue_npc': 'Спасение NPC',
+            'type_solve_puzzle': 'Решение головоломки',
+            'type_talk_to_npc': 'Разговор с NPC',
+            'type_visit_location': 'Посещение локации',
+            'type_learn_spell': 'Изучение заклинания',
+            'type_train_skill': 'Тренировка навыка',
+            'type_donate_item': 'Пожертвование предмета',
+            'type_read_book': 'Чтение книги',
+            'type_plant_tree': 'Посадка дерева',
+            'type_clean_up': 'Уборка территории',
+            'type_protect_npc': 'Защита NPC',
+            'type_negotiate_deal': 'Заключение сделки',
+            'type_investigate_crime': 'Расследование преступления',
+            'type_perform_show': 'Выступление',
+            'type_compete_in_race': 'Участие в гонках',
+            'type_win_tournament': 'Победа в турнире',
+            'type_make_peace': 'Заключение мира',
+            'type_find_secret_room': 'Поиск потайной комнаты',
+            'type_deliver_gift': 'Доставка подарка',
+            'type_craft_tool': 'Изготовление инструмента',
+            'type_rescue_animal': 'Спасение животного',
+            'type_solve_mystery': 'Решение загадки',
+            'type_teach_child': 'Обучение ребёнка',
+            'type_explore_ruins': 'Исследование руин',
+            'type_learn_recipe': 'Изучение рецепта',
+            'type_practice_magic': 'Практика магии',
+            'type_donate_money': 'Пожертвование денег',
+            'type_write_poem': 'Написание стихотворения',
+            'type_build_shelter': 'Постройка укрытия',
+            'type_clean_river': 'Очистка реки',
+            'type_protect_village': 'Защита деревни',
+            'type_negotiate_trade': 'Переговоры о торговле',
+            'type_investigate_murder': 'Расследование убийства',
+            'type_perform_concert': 'Выступление на концерте',
+            'type_compete_in_contest': 'Участие в конкурсе',
+            'type_win_competition': 'Победа в соревновании',
+            'type_make_alliance': 'Заключение альянса',
+
+            // Миссии с чёрным юмором
+            'type_find_peace': 'Поиск мира',
+            'type_count_corpses': 'Подсчёт трупов',
+            'type_feed_giants': 'Кормление великанов',
+            'type_clean_graveyard': 'Уборка кладбища',
+            'type_rescue_drowning_man': 'Спасти тонущего',
+            'type_buy_horse': 'Купить лошадь',
+            'type_find_true_love': 'Найти истинную любовь',
+            'type_steal_from_poor': 'Украсть у бедного',
+            'type_help_beggar': 'Помочь нищему',
+            'type_build_wall': 'Построить стену',
+            'type_dance_with_deaths': 'Танец со смертью',
+            'type_heal_the_dead': 'Лечение мертвецов',
+            'type_count_stars': 'Считать звёзды',
+            'type_drink_poison': 'Выпить яд',
+            'type_survive_nightmare': 'Выжить в кошмаре',
+            'type_talk_to_gravestone': 'Разговор с надгробием',
+            'type_find_happiness': 'Найти счастье',
+            'type_eat_soup': 'Съесть суп',
+            'type_watch_sunrise': 'Наблюдать восход',
+            'type_hug_a_bear': 'Обнять медведя',
+            'type_kiss_a_skull': 'Поцелуй черепа',
+            'type_dig_own_grave': 'Выкопать собственную могилу',
+            'type_burn_books': 'Сжечь книги',
+            'type_plant_corpses': 'Посадить трупы',
+            'type_listen_to_silence': 'Слушать тишину',
+            'type_count_deaths': 'Считать смерти',
+            'type_cure_loneliness': 'Вылечить одиночество',
+            'type_drown_in_tears': 'Утонуть в слезах',
+            'type_eat_ashes': 'Съесть пепел',
+            'type_kiss_death': 'Поцелуй смерти',
+            'type_hunt_yourself': 'Охота на себя',
+            'type_dream_of_peace': 'Мечтать о мире',
+            'type_cry_for_no_reason': 'Плакать без причины',
+            'type_burn_memories': 'Сжечь воспоминания',
+            'type_laugh_at_funeral': 'Смеяться на похоронах',
+            'type_feed_cats_corpses': 'Кормить котов трупами',
+            'type_find_light': 'Найти свет',
+            'type_bury_your_past': 'Похоронить прошлое',
+            'type_sing_to_the_dead': 'Петь мертвецам',
+            'type_drink_blood': 'Пить кровь',
+            'type_sleep_in_graveyard': 'Спать на кладбище',
+            'type_hug_a_zombie': 'Обнять зомби',
+            'type_count_graves': 'Считать могилы',
+            'type_dance_on_graves': 'Танцевать на могилах',
+            'type_cook_human_flesh': 'Готовить человечину',
+            'type_watch_world_burn': 'Наблюдать, как горит мир',
+            'type_pray_to_void': 'Молиться пустоте',
+            'type_eat_heart': 'Съесть сердце',
+            'type_find_meaning': 'Найти смысл жизни',
+            'type_kiss_grave': 'Поцеловать могилу',
+            'type_burn_hopes': 'Сжечь надежды'
+        };
+
+        // Функция для получения и отображения миссий пользователя
+        async function getMissions() {
+            if (!currentUserId) {
+                showStatus('Сначала установите ID пользователя.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/missions/user/${currentUserId}`);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                currentMissions = await response.json(); // Получаем ВСЕ миссии
+                console.log('Полученные миссии:', currentMissions); // Отладка
+
+                const missionsListDiv = document.getElementById('missionsList');
+                missionsListDiv.innerHTML = ''; // Очистить предыдущий список
+
+                if (currentMissions.length === 0) {
+                    missionsListDiv.innerHTML = '<p>У пользователя пока нет миссий.</p>';
+                    // Обновляем списки для обновления и завершения миссий
+                    updateMissionProgressDisplay();
+                    updateMissionCompleteDisplay();
+                    return;
+                }
+
+                // --- НОВОЕ: Обновляем списки для обновления и завершения миссий ---
+                // Перед этим, нужно обновить переменную currentMissionsForLists, которая содержит только миссии, доступные для взаимодействия (не завершённые)
+                currentMissionsForLists = currentMissions.filter(mission => mission.status !== 'completed');
+
+                // Обновляем списки для обновления и завершения миссий
+                updateMissionProgressDisplay();
+                updateMissionCompleteDisplay();
+
+                currentMissions.forEach(mission => {
+                    const missionDiv = document.createElement('div');
+                    missionDiv.className = 'mission';
+
+                    const typeName = missionTypeNames[mission.missionTypeId] || mission.missionTypeId; // Если тип не найден, оставляем как есть
+
+                    // --- НОВОЕ: Получаем цель миссии (objective) из таблицы mission_types ---
+                    const missionObjectives = {
+                        // Накопительные (Accumulative) и Убийства (Killing)
+                        'type_collect_wood': 'Собирай древесину.',
+                        'type_defeat_goblins': 'Побеждай гоблинов.',
+                        'type_hunt_wolves': 'Охоться на волков.',
+                        'type_mine_stone': 'Добывай камень.',
+                        'type_fish': 'Лови рыбу.',
+                        'type_collect_herbs': 'Собирай травы.',
+                        'type_kill_bears': 'Охоться на медведей.',
+                        'type_mine_coal': 'Добывай уголь.',
+                        'type_gather_apples': 'Собирай яблоки.',
+                        'type_slay_orcs': 'Побеждай орков.',
+                        'type_hunt_boars': 'Охоться на кабанов.',
+                        'type_mine_iron': 'Добывай железо.',
+                        'type_farm_wheat': 'Выращивай пшеницу.',
+                        'type_collect_flowers': 'Собирай цветы.',
+                        'type_kill_dragons': 'Охоться на драконов.',
+                        'type_mine_gold': 'Добывай золото.',
+                        'type_gather_mushrooms': 'Собирай грибы.',
+                        'type_slay_undead': 'Побеждай нежить.',
+                        'type_hunt_deer': 'Охоться на оленей.',
+                        'type_mine_diamonds': 'Добывай алмазы.',
+                        'type_collect_berries': 'Собирай ягоды.',
+                        'type_kill_spiders': 'Убивай пауков.',
+                        'type_mine_copper': 'Добывай медь.',
+                        'type_farm_carrots': 'Выращивай морковь.',
+                        'type_gather_logs': 'Собирай брёвна.',
+                        'type_kill_slimes': 'Убивай слизней.',
+                        'type_mine_tin': 'Добывай олово.',
+                        'type_farm_potatoes': 'Выращивай картофель.',
+                        'type_collect_feathers': 'Собирай перья.',
+                        'type_kill_bats': 'Охоться на летучих мышей.',
+                        'type_mine_silver': 'Добывай серебро.',
+                        'type_farm_cabbage': 'Выращивай капусту.',
+                        'type_gather_branches': 'Собирай ветки.',
+                        'type_kill_skeletons': 'Побеждай скелетов.',
+                        'type_mine_lead': 'Добывай свинец.',
+                        'type_farm_onions': 'Выращивай лук.',
+                        'type_collect_leaves': 'Собирай листья.',
+                        'type_kill_zombies': 'Побеждай зомби.',
+                        'type_mine_nickel': 'Добывай никель.',
+                        'type_farm_turnips': 'Выращивай репу.',
+
+                        // Разовые (One-Time)
+                        'type_find_treasure': 'Найди спрятанный клад.',
+                        'type_deliver_message': 'Доставь важное письмо.',
+                        'type_craft_potion': 'Свари зелье исцеления.',
+                        'type_rescue_npc': 'Спаси узника.',
+                        'type_solve_puzzle': 'Реши древнюю головоломку.',
+                        'type_talk_to_npc': 'Поговори с важным человеком.',
+                        'type_visit_location': 'Посети древний храм.',
+                        'type_learn_spell': 'Изучи новое заклинание.',
+                        'type_train_skill': 'Повысь навык владения мечом.',
+                        'type_donate_item': 'Пожертвуй редкий артефакт.',
+                        'type_read_book': 'Прочитай древнюю книгу.',
+                        'type_plant_tree': 'Посади дерево в пустыне.',
+                        'type_clean_up': 'Очисти лагерь от мусора.',
+                        'type_protect_npc': 'Защити торговца от бандитов.',
+                        'type_negotiate_deal': 'Заключи мир между кланами.',
+                        'type_investigate_crime': 'Расследуй кражу.',
+                        'type_perform_show': 'Выступи с представлением.',
+                        'type_compete_in_race': 'Участвуй в гонках на лодках.',
+                        'type_win_tournament': 'Выиграй турнир по стрельбе из лука.',
+                        'type_make_peace': 'Прими участие в мирных переговорах.',
+                        'type_find_secret_room': 'Найди потайную комнату в замке.',
+                        'type_deliver_gift': 'Доставь подарок к празднику.',
+                        'type_craft_tool': 'Создай новый инструмент.',
+                        'type_rescue_animal': 'Спаси заблудившееся животное.',
+                        'type_solve_mystery': 'Реши загадку старого мудреца.',
+                        'type_teach_child': 'Научи ребёнка читать.',
+                        'type_explore_ruins': 'Исследуй древние руины.',
+                        'type_learn_recipe': 'Выучи рецепт вкусной еды.',
+                        'type_practice_magic': 'Потренируй заклинание телепортации.',
+                        'type_donate_money': 'Пожертвуй деньги на благотворительность.',
+                        'type_write_poem': 'Напиши стихотворение для возлюбленной.',
+                        'type_build_shelter': 'Построй укрытие для беженцев.',
+                        'type_clean_river': 'Очисти реку от мусора.',
+                        'type_protect_village': 'Защити деревню от набега.',
+                        'type_negotiate_trade': 'Организуй торговую сделку.',
+                        'type_investigate_murder': 'Расследуй загадочное убийство.',
+                        'type_perform_concert': 'Выступи с концертом.',
+                        'type_compete_in_contest': 'Участвуй в конкурсе поваров.',
+                        'type_win_competition': 'Выиграй соревнование по бегу.',
+                        'type_make_alliance': 'Помоги заключить альянс.',
+
+                        // Миссии с чёрным юмором
+                        'type_find_peace': 'Попытайся найти мир во время войны. Удачи.',
+                        'type_count_corpses': 'Сосчитай, сколько трупов ты оставил после себя.',
+                        'type_feed_giants': 'Принеси великанам еду. Или просто принеси себя.',
+                        'type_clean_graveyard': 'Наведи порядок на кладбище. Своими руками.',
+                        'type_rescue_drowning_man': 'Спаси утопающего. Он потом поблагодарит... из могилки.',
+                        'type_buy_horse': 'Купи лошадь. Убедись, что она не призрак.',
+                        'type_find_true_love': 'Найди свою вторую половинку. В могиле.',
+                        'type_steal_from_poor': 'Укради хлеб у нищего. Он всё равно умрёт.',
+                        'type_help_beggar': 'Дай монетку нищему. Он умрёт, но счастливым.',
+                        'type_build_wall': 'Построй стену. Из костей.',
+                        'type_dance_with_deaths': 'Потанцуй с костлявой. Она пригласит.',
+                        'type_heal_the_dead': 'Попробуй вылечить зомби. У тебя не получится.',
+                        'type_count_stars': 'Сосчитай, сколько звёзд на небе. Это займёт вечность.',
+                        'type_drink_poison': 'Выпей яд. Это бесплатно.',
+                        'type_survive_nightmare': 'Продержись ночь в собственных кошмарах.',
+                        'type_talk_to_gravestone': 'Поговори с надгробием. Оно не ответит, но ты почувствуешь себя лучше.',
+                        'type_find_happiness': 'Найди счастье в этом мире. Оно не существует.',
+                        'type_eat_soup': 'Съешь тарелку супа. Он из твоих надежд.',
+                        'type_watch_sunrise': 'Понаблюдай за восходом. Он последний.',
+                        'type_hug_a_bear': 'Обними медведя. Он ответит взаимностью.',
+                        'type_kiss_a_skull': 'Поцелуй череп. Получи благословение.',
+                        'type_dig_own_grave': 'Выкопай яму. Возможно, свою.',
+                        'type_burn_books': 'Сожги книги. Знания — это боль.',
+                        'type_plant_corpses': 'Посади трупы. Вырастет лес смерти.',
+                        'type_listen_to_silence': 'Послушай тишину. Она кричит.',
+                        'type_count_deaths': 'Сосчитай, сколько людей ты убил. Ты потерял счёт.',
+                        'type_cure_loneliness': 'Найди способ вылечить одиночество. Его нет.',
+                        'type_drown_in_tears': 'Утони в собственных слезах.',
+                        'type_eat_ashes': 'Съешь горсть пепла. Вкус надежды.',
+                        'type_kiss_death': 'Поцелуй смерть. Она не отвечает.',
+                        'type_hunt_yourself': 'Охоться на самого себя. Кто победит?',
+                        'type_dream_of_peace': 'Помечтай о мире. Проснись.',
+                        'type_cry_for_no_reason': 'Поплачь без причины. Причина есть всегда.',
+                        'type_burn_memories': 'Сожги все воспоминания. Ты забудешь, кто ты.',
+                        'type_laugh_at_funeral': 'Похихикивай на похоронах. Люди оценят.',
+                        'type_feed_cats_corpses': 'Покорми бездомных котов человечиной.',
+                        'type_find_light': 'Найди свет в конце тоннеля. Это поезд.',
+                        'type_bury_your_past': 'Похорони своё прошлое. Оно будет скучать.',
+                        'type_sing_to_the_dead': 'Спой песню мертвецам. Они аплодируют.',
+                        'type_drink_blood': 'Выпей стакан крови. Не спрашивай, чьей.',
+                        'type_sleep_in_graveyard': 'Проведи ночь на кладбище. Призраки не уйдут.',
+                        'type_hug_a_zombie': 'Обними зомби. Он ответит поцелуем.',
+                        'type_count_graves': 'Сосчитай, сколько могил. Одна твоя.',
+                        'type_dance_on_graves': 'Потанцуй на могилах. Мертвецы завидуют.',
+                        'type_cook_human_flesh': 'Приготовь ужин. Главное — не задумываться.',
+                        'type_watch_world_burn': 'Понаблюдай, как мир сгорает. Ты поджёг.',
+                        'type_pray_to_void': 'Помолись пустоте. Никто не услышит.',
+                        'type_eat_heart': 'Съешь чье-то сердце. Оно ещё бьётся.',
+                        'type_find_meaning': 'Найди смысл жизни. Его нет.',
+                        'type_kiss_grave': 'Поцелуй надгробие. Покойник доволен.',
+                        'type_burn_hopes': 'Сожги все надежды. Тепло.'
+                    };
+                    const objective = missionObjectives[mission.missionTypeId] || 'Цель не указана';
+                    // --- КОНЕЦ НОВОГО ---
+
+                    // --- НОВОЕ: Формируем строку прогресса (0 из N) ---
+                    // Используем значение objective_value из БД
+                    const maxProgress = mission.objectiveValue; // Цель миссии
+                    const progressDisplay = `${mission.progress} из ${maxProgress}`;
+                    // --- КОНЕЦ НОВОГО ---
+
+                    // --- НОВОЕ: Переводим статус на русский ---
+                    const statusNames = {
+                        'assigned': 'Назначена',
+                        'in_progress': 'В процессе',
+                        'completed': 'Выполнена',
+                        'failed': 'Провалена',
+                        'expired': 'Просрочена'
+                    };
+                    const statusName = statusNames[mission.status] || mission.status;
+                    // --- КОНЕЦ НОВОГО ---
+
+                    // Отображаем все поля, возвращаемые API
+                    missionDiv.innerHTML = `
+                <strong>ID:</strong> ${mission.id}<br>
+                <strong>Название:</strong> ${typeName}<br> <!-- Теперь отображается русское название типа -->
+                <strong>Цель:</strong> ${objective}<br> <!-- Теперь отображается цель из маппинга JS -->
+                <strong>Статус:</strong> ${statusName}<br>
+                <strong>Прогресс:</strong> ${progressDisplay}<br>
+                <strong>Создана:</strong> ${new Date(mission.createdAt).toLocaleString()}<br>
+                <strong>Истекает:</strong> ${new Date(mission.expiresAt).toLocaleString()}<br>
+                <strong>Награда получена:</strong> ${mission.rewardsClaimed ? 'Да' : 'Нет'}<br>
+            `;
+                    missionsListDiv.appendChild(missionDiv);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при получении миссий:', error);
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Функция для обновления списка миссий в выпадающем списке "Обновление прогресса"
+        function updateMissionProgressDisplay() {
+            const select = document.getElementById('missionIdToUpdate');
+            // Сохраняем текущее выбранное значение
+            const selectedValue = select.value;
+
+            select.innerHTML = '<option value="">-- Выберите миссию --</option>'; // Очищаем список
+
+            if (currentMissionsForLists.length > 0) {
+                currentMissionsForLists.forEach(mission => {
+                    const option = document.createElement('option');
+                    option.value = mission.id;
+                    // Используем маппинг из JS для названия типа
+                    const typeName = missionTypeNames[mission.missionTypeId] || mission.missionTypeId;
+                    option.textContent = `${mission.id} (${typeName})`;
+                    select.appendChild(option);
+                });
+
+                // Устанавливаем ранее выбранное значение
+                if (selectedValue && Array.from(select.options).some(option => option.value === selectedValue)) {
+                    select.value = selectedValue;
+                } else {
+                    select.value = '';
+                }
+            } else {
+                select.value = '';
+            }
+        }
+
+        // Функция для обновления списка миссий в выпадающем списке "Завершение миссии"
+        function updateMissionCompleteDisplay() {
+            const select = document.getElementById('missionIdToComplete');
+            // Сохраняем текущее выбранное значение
+            const selectedValue = select.value;
+
+            select.innerHTML = '<option value="">-- Выберите миссию --</option>'; // Очищаем список
+
+            if (currentMissionsForLists.length > 0) {
+                currentMissionsForLists.forEach(mission => {
+                    const option = document.createElement('option');
+                    option.value = mission.id;
+                    // Используем маппинг из JS для названия типа
+                    const typeName = missionTypeNames[mission.missionTypeId] || mission.missionTypeId;
+                    option.textContent = `${mission.id} (${typeName})`;
+                    select.appendChild(option);
+                });
+
+                // Устанавливаем ранее выбранное значение
+                if (selectedValue && Array.from(select.options).some(option => option.value === selectedValue)) {
+                    select.value = selectedValue;
+                } else {
+                    select.value = '';
+                }
+            } else {
+                select.value = '';
+            }
+        }
+
+        // Функция для обновления прогресса миссии
+        async function updateProgress() {
+            if (!currentUserId) {
+                showStatus('Сначала установите ID пользователя.', 'error');
+                return;
+            }
+
+            const missionId = document.getElementById('missionIdToUpdate').value.trim();
+            const progressDelta = parseInt(document.getElementById('progressDelta').value);
+
+            if (!missionId) {
+                showStatus('Пожалуйста, выберите миссию из списка.', 'error');
+                return;
+            }
+            if (isNaN(progressDelta)) {
+                showStatus('Пожалуйста, введите корректное значение прогресса.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/missions/${missionId}/progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ progressDelta: progressDelta })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                console.log('Прогресс обновлён:', data); // Отладка
+
+                showStatus('Прогресс обновлён!', 'success');
+                // Обновляем список миссий
+                getMissions();
+                // Очистить поле ввода
+                document.getElementById('progressDelta').value = '1';
+            } catch (error) {
+                console.error('Ошибка при обновлении прогресса:', error);
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Функция для завершения миссии
+        async function completeMission() {
+            if (!currentUserId) {
+                showStatus('Сначала установите ID пользователя.', 'error');
+                return;
+            }
+
+            const missionId = document.getElementById('missionIdToComplete').value.trim();
+
+            if (!missionId) {
+                showStatus('Пожалуйста, выберите миссию из списка.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/missions/${missionId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // Не передаём userId, так как он не нужен в новом API для завершения
+                    // body: JSON.stringify({ userId: currentUserId }) // УБРАНО
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                console.log('Миссия завершена:', data); // Отладка
+
+                showStatus('Миссия завершена!', 'success');
+                // Обновляем список миссий
+                getMissions();
+                // Очистить поля ввода
+                document.getElementById('missionIdToUpdate').value = '';
+                document.getElementById('progressDelta').value = '1';
+                document.getElementById('missionIdToComplete').value = '';
+            } catch (error) {
+                console.error('Ошибка при завершении миссии:', error);
+                showStatus(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+    </script>
+
+</body>
+
+</html>

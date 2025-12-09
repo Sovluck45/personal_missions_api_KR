@@ -1,0 +1,11 @@
+# Включаем модуль mod_rewrite
+RewriteEngine On
+
+AddDefaultCharset UTF-8
+
+# Условие: если запрошенный файл или папка не существует
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Перенаправляем все остальные запросы на index.php
+RewriteRule ^ index.php [QSA,L]
