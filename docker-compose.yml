@@ -1,0 +1,54 @@
+services:
+  # Контейнер с базой данных MySQL
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: personal_missions_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_pass
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-ssl
+    volumes:
+      # Постоянное хранилище данных БД
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      # Открываем порт 3307 на хосте, проксируя на 3306 в контейнере
+      - "3307:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "app_user", "-papp_pass" ]
+      timeout: 20s
+      retries: 10
+      start_period: 10s
+      interval: 5s
+
+  # Контейнер с PHP-приложением
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Монтируем весь проект в /var/www/html
+      - ./:/var/www/html
+    ports:
+      # Открываем порт 8082 на хосте, проксируя на 80 в контейнере
+      - "8082:80"
+    environment:
+      DB_DRIVER: pdo_mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: personal_missions_db
+      DB_USER: app_user
+      DB_PASS: app_pass
+      DB_CHARSET: utf8mb4
+      # Отключаем SSL для локального подключения
+      DB_SSL_MODE: disabled
+
+# Определяем именованный том для хранения данных БД
+volumes:
+  db_data:
