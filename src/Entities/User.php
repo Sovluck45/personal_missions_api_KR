@@ -26,7 +26,6 @@ class User
         private readonly \DateTimeImmutable $createdAt = new \DateTimeImmutable(),
         private readonly ?\DateTimeImmutable $lastLoginAt = null
     ) {
-        // Можно добавить валидацию здесь, если нужно
         if ($this->level < 1) {
             throw new \InvalidArgumentException('Level must be at least 1');
         }
@@ -80,7 +79,6 @@ class User
             throw new \InvalidArgumentException('Experience amount to add cannot be negative');
         }
         $this->experience += $amount;
-        // Здесь можно добавить логику повышения уровня при достижении порога
     }
 
     /**
@@ -90,4 +88,5 @@ class User
     {
         $this->level++;
     }
+
 }
