@@ -23,21 +23,17 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     libzip-dev \
-    # --- НОВОЕ: Установка зависимостей для расширения intl ---
     libicu-dev \
     g++ \
-    # --- КОНЕЦ НОВОГО ---
     && docker-php-ext-install zip \
-    # --- НОВОЕ: Установка расширения intl ---
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl \
-    # --- КОНЕЦ НОВОГО ---
     && rm -r /var/lib/apt/lists/*
 
 # Устанавливаем timezone
 RUN echo "date.timezone=Europe/Moscow" > /usr/local/etc/php/conf.d/timezone.ini
 
-# Устанавливаем opcache config (опционально)
+# Устанавливаем opcache config
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
     echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
     echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini && \
@@ -54,12 +50,10 @@ COPY composer.json composer.lock* /var/www/html/
 # Устанавливаем зависимости PHP через Composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Копируем файлы конфигурации Apache (если есть) или используем стандартный
-# COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
-
 # Экспортируем порт 80
 EXPOSE 80
 
 # Команда, выполняемая при запуске контейнера
 # Apache уже запущен в официальном образе, но мы можем убедиться
+
 CMD ["apache2-foreground"]
