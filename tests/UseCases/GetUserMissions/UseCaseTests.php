@@ -33,13 +33,13 @@ class UseCaseTest extends TestCase
 
         $reward = new Reward('gold', 50);
         $missionType = new MissionType('type1', 'Test Mission', 'A test mission', 'Collect 5 items', $reward);
-        $mission = new Mission( // <-- Исправлено: добавлен expiresAt
+        $mission = new Mission( 
             id: 'mission123',
             userId: $userId,
             missionTypeId: $missionType->getId(),
             status: Mission::STATUS_IN_PROGRESS,
             progress: 3,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day') 
         );
 
         $this->mockMissionRepo->expects($this->once())
