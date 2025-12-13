@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Entities\Mission; // Предположим, что сущность существует
+use App\Entities\Mission;
 use App\Entities\User;
 use App\Entities\MissionType;
 use Doctrine\DBAL\Connection;
@@ -52,8 +52,6 @@ class MissionGenerationService
 
         $defaultMissionTypeId = $row['id'];
 
-        // --- НОВОЕ: Генерируем случайное количество для задания ---
-        // Для простоты, используем маппинг. В реальном проекте это нужно получать из БД.
         $missionObjectives = [
     // Накопительные (Accumulative) и Убийства (Killing)
     'type_collect_wood' => [5, 15],
@@ -70,12 +68,12 @@ class MissionGenerationService
     'type_mine_iron' => [4, 10],
     'type_farm_wheat' => [20, 50],
     'type_collect_flowers' => [15, 25],
-    'type_kill_dragons' => [1, 1], // Предположим, редкая миссия
+    'type_kill_dragons' => [1, 1], 
     'type_mine_gold' => [2, 6],
     'type_gather_mushrooms' => [12, 18],
     'type_slay_undead' => [5, 15],
     'type_hunt_deer' => [4, 8],
-    'type_mine_diamonds' => [1, 2], // Очень редкий ресурс
+    'type_mine_diamonds' => [1, 2], 
     'type_collect_berries' => [20, 40],
     'type_kill_spiders' => [6, 12],
     'type_mine_copper' => [8, 16],
@@ -139,62 +137,60 @@ class MissionGenerationService
     'type_win_competition' => [1, 1],
     'type_make_alliance' => [1, 1],
 
-    // Миссии с чёрным юмором (примеры, можно настроить индивидуально)
-    'type_find_peace' => [1, 1], // Разовая
-    'type_count_corpses' => [1, 1], // Разовая
-    'type_feed_giants' => [1, 1], // Разовая
-    'type_clean_graveyard' => [1, 1], // Разовая
-    'type_rescue_drowning_man' => [1, 1], // Разовая
-    'type_buy_horse' => [1, 1], // Разовая
-    'type_find_true_love' => [1, 1], // Разовая
-    'type_steal_from_poor' => [1, 1], // Разовая
-    'type_help_beggar' => [1, 1], // Разовая
-    'type_build_wall' => [5, 10], // Накопительная (например, положить N кирпичей)
-    'type_dance_with_deaths' => [1, 1], // Разовая
-    'type_heal_the_dead' => [1, 1], // Разовая
-    'type_count_stars' => [1, 1], // Разовая
-    'type_drink_poison' => [1, 1], // Разовая
-    'type_survive_nightmare' => [1, 1], // Разовая
-    'type_talk_to_gravestone' => [1, 1], // Разовая
-    'type_find_happiness' => [1, 1], // Разовая
-    'type_eat_soup' => [1, 1], // Разовая
-    'type_watch_sunrise' => [1, 1], // Разовая
-    'type_hug_a_bear' => [1, 1], // Разовая
-    'type_kiss_a_skull' => [1, 1], // Разовая
-    'type_dig_own_grave' => [1, 1], // Разовая
-    'type_burn_books' => [10, 20], // Накопительная
-    'type_plant_corpses' => [5, 10], // Накопительная
-    'type_listen_to_silence' => [1, 1], // Разовая
-    'type_count_deaths' => [1, 1], // Разовая
-    'type_cure_loneliness' => [1, 1], // Разовая
-    'type_drown_in_tears' => [1, 1], // Разовая
-    'type_eat_ashes' => [1, 1], // Разовая
-    'type_kiss_death' => [1, 1], // Разовая
-    'type_hunt_yourself' => [1, 1], // Разовая
-    'type_dream_of_peace' => [1, 1], // Разовая
-    'type_cry_for_no_reason' => [1, 1], // Разовая
-    'type_burn_memories' => [1, 1], // Разовая
-    'type_laugh_at_funeral' => [1, 1], // Разовая
-    'type_feed_cats_corpses' => [5, 10], // Накопительная
-    'type_find_light' => [1, 1], // Разовая
-    'type_bury_your_past' => [1, 1], // Разовая
-    'type_sing_to_the_dead' => [1, 1], // Разовая
-    'type_drink_blood' => [1, 1], // Разовая
-    'type_sleep_in_graveyard' => [1, 1], // Разовая
-    'type_hug_a_zombie' => [1, 1], // Разовая
-    'type_count_graves' => [1, 1], // Разовая
-    'type_dance_on_graves' => [1, 1], // Разовая
-    'type_cook_human_flesh' => [1, 1], // Разовая
-    'type_watch_world_burn' => [1, 1], // Разовая
-    'type_pray_to_void' => [1, 1], // Разовая
-    'type_eat_heart' => [1, 1], // Разовая
-    'type_find_meaning' => [1, 1], // Разовая
-    'type_kiss_grave' => [1, 1], // Разовая
-    'type_burn_hopes' => [1, 1], // Разовая
+    'type_find_peace' => [1, 1], 
+    'type_count_corpses' => [1, 1], 
+    'type_feed_giants' => [1, 1], 
+    'type_clean_graveyard' => [1, 1],
+    'type_rescue_drowning_man' => [1, 1],
+    'type_buy_horse' => [1, 1],
+    'type_find_true_love' => [1, 1], 
+    'type_steal_from_poor' => [1, 1], 
+    'type_help_beggar' => [1, 1],
+    'type_build_wall' => [5, 10], 
+    'type_dance_with_deaths' => [1, 1], 
+    'type_heal_the_dead' => [1, 1], 
+    'type_count_stars' => [1, 1], 
+    'type_drink_poison' => [1, 1], 
+    'type_survive_nightmare' => [1, 1], 
+    'type_talk_to_gravestone' => [1, 1], 
+    'type_find_happiness' => [1, 1], 
+    'type_eat_soup' => [1, 1], 
+    'type_watch_sunrise' => [1, 1], 
+    'type_hug_a_bear' => [1, 1], 
+    'type_kiss_a_skull' => [1, 1], 
+    'type_dig_own_grave' => [1, 1], 
+    'type_burn_books' => [10, 20], 
+    'type_plant_corpses' => [5, 10], 
+    'type_listen_to_silence' => [1, 1], 
+    'type_count_deaths' => [1, 1], 
+    'type_cure_loneliness' => [1, 1], 
+    'type_drown_in_tears' => [1, 1], 
+    'type_eat_ashes' => [1, 1], 
+    'type_kiss_death' => [1, 1], 
+    'type_hunt_yourself' => [1, 1], 
+    'type_dream_of_peace' => [1, 1], 
+    'type_cry_for_no_reason' => [1, 1], 
+    'type_burn_memories' => [1, 1], 
+    'type_laugh_at_funeral' => [1, 1], 
+    'type_feed_cats_corpses' => [5, 10], 
+    'type_find_light' => [1, 1], 
+    'type_bury_your_past' => [1, 1], 
+    'type_sing_to_the_dead' => [1, 1], 
+    'type_drink_blood' => [1, 1],
+    'type_sleep_in_graveyard' => [1, 1], 
+    'type_hug_a_zombie' => [1, 1], 
+    'type_count_graves' => [1, 1], 
+    'type_dance_on_graves' => [1, 1], 
+    'type_cook_human_flesh' => [1, 1],
+    'type_watch_world_burn' => [1, 1], 
+    'type_pray_to_void' => [1, 1], 
+    'type_eat_heart' => [1, 1], 
+    'type_find_meaning' => [1, 1],
+    'type_kiss_grave' => [1, 1], 
+    'type_burn_hopes' => [1, 1], 
 ];
-        $objectiveRange = $missionObjectives[$defaultMissionTypeId] ?? [5, 15]; // По умолчанию 5-15
+        $objectiveRange = $missionObjectives[$defaultMissionTypeId] ?? [5, 15]; 
         $objectiveValue = rand($objectiveRange[0], $objectiveRange[1]);
-        // --- КОНЕЦ НОВОГО ---
 
         // 3. Создать новую миссию
         $missionId = uniqid();
@@ -211,12 +207,10 @@ class MissionGenerationService
         $stmt->bindValue(6, (new \DateTimeImmutable())->format('Y-m-d H:i:s'));
         $stmt->bindValue(7, $expiresAt);
         $stmt->bindValue(8, 0);
-        $stmt->bindValue(9, $objectiveValue); // Сохраняем случайное значение цели
+        $stmt->bindValue(9, $objectiveValue); 
         $stmt->executeStatement();
 
         // 5. Создать и вернуть объект миссии (или массив данных)
-        // Предположим, что у нас есть класс Mission
-        // В реальности, тебе нужно будет адаптировать это под структуру, которую ты хочешь возвращать.
         $mission = new Mission(
             id: $missionId,
             userId: $userId,
@@ -226,9 +220,10 @@ class MissionGenerationService
             createdAt: new \DateTimeImmutable(),
             expiresAt: new \DateTimeImmutable($expiresAt),
             rewardsClaimed: false,
-            objectiveValue: $objectiveValue // <-- Включаем цель
+            objectiveValue: $objectiveValue
         );
 
         return [$mission, null];
     }
+
 }
