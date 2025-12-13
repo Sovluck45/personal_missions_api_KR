@@ -24,23 +24,19 @@ class MissionGenerationServiceTest extends TestCase
     {
         $userId = 'user123';
 
-        // --- Мокаем проверку существования пользователя (пользователь существует) ---
         $checkUserSql = 'SELECT COUNT(*) FROM users WHERE id = ?';
         $checkUserStmtMock = $this->createMock(Statement::class);
         $checkUserResultMock = $this->createMock(Result::class);
 
-        // Подготавливаем моки для других вызовов
         $selectTypesStmtMock = $this->createMock(Statement::class);
         $selectTypesResultMock = $this->createMock(Result::class);
         $insertStmtMock = $this->createMock(Statement::class);
 
-        // --- НОВОЕ: Создаём маппинг SQL -> Statement Mock ---
         $sqlToMockMap = [
             $checkUserSql => $checkUserStmtMock,
-            'SELECT id FROM mission_types' => $selectTypesStmtMock, // Используем подстроку
-            'INSERT INTO missions ' => $insertStmtMock,             // Используем подстроку
+            'SELECT id FROM mission_types' => $selectTypesStmtMock, 
+            'INSERT INTO missions ' => $insertStmtMock,             
         ];
-        // --- КОНЕЦ НОВОГО ---
 
         // Подготавливаем ожидания для Connection->prepare, используя returnCallback
         $this->mockConnection->expects($this->exactly(3)) // prepare вызывается 3 раза (проверка юзера, выбор типа, вставка миссии)
@@ -65,7 +61,7 @@ class MissionGenerationServiceTest extends TestCase
             ->willReturn($checkUserResultMock);
         $checkUserResultMock->expects($this->once())
             ->method('fetchOne')
-            ->willReturn(1); // Пользователь существует
+            ->willReturn(1);
 
         // Остальные ожидания для selectTypesStmtMock
         $selectTypesStmtMock->expects($this->once())
@@ -96,29 +92,25 @@ class MissionGenerationServiceTest extends TestCase
     {
         $userId = 'new_user_123';
 
-        // --- Мокаем проверку существования пользователя (не найден) ---
         $checkUserSql = 'SELECT COUNT(*) FROM users WHERE id = ?';
         $checkUserStmtMock = $this->createMock(Statement::class);
         $checkUserResultMock = $this->createMock(Result::class);
 
-        // Подготавливаем моки для других вызовов
         $insertUserStmtMock = $this->createMock(Statement::class);
         $selectTypesStmtMock = $this->createMock(Statement::class);
         $selectTypesResultMock = $this->createMock(Result::class);
         $insertMissionStmtMock = $this->createMock(Statement::class);
 
-        // --- НОВОЕ: Создаём маппинг SQL -> Statement Mock ---
         $sqlToMockMap = [
             $checkUserSql => $checkUserStmtMock,
-            'INSERT INTO users ' => $insertUserStmtMock, // Используем подстроку
-            'SELECT id FROM mission_types' => $selectTypesStmtMock, // Используем подстроку
-            'INSERT INTO missions ' => $insertMissionStmtMock, // Используем подстроку
+            'INSERT INTO users ' => $insertUserStmtMock,
+            'SELECT id FROM mission_types' => $selectTypesStmtMock,
+            'INSERT INTO missions ' => $insertMissionStmtMock, 
         ];
-        // --- КОНЕЦ НОВОГО ---
 
-        $this->mockConnection->expects($this->exactly(4)) // prepare вызывается 4 раза (проверка юзера, вставка юзера, выбор типа, вставка миссии)
+        $this->mockConnection->expects($this->exactly(4)) 
             ->method('prepare')
-            ->with($this->isType('string')) // Принимаем любой SQL-запрос
+            ->with($this->isType('string')) 
             ->willReturnCallback(function ($sql) use ($sqlToMockMap) {
                 foreach ($sqlToMockMap as $pattern => $mock) {
                     if (strpos($sql, $pattern) !== false) {
@@ -137,7 +129,7 @@ class MissionGenerationServiceTest extends TestCase
             ->willReturn($checkUserResultMock);
         $checkUserResultMock->expects($this->once())
             ->method('fetchOne')
-            ->willReturn(0); // Пользователь НЕ существует
+            ->willReturn(0); 
 
         // Ожидание для insertUserStmtMock
         $insertUserStmtMock->expects($this->once())
@@ -181,13 +173,10 @@ class MissionGenerationServiceTest extends TestCase
         $selectTypesStmtMock = $this->createMock(Statement::class);
         $selectTypesResultMock = $this->createMock(Result::class);
 
-        // --- НОВОЕ: Создаём маппинг SQL -> Statement Mock ---
         $sqlToMockMap = [
             $checkUserSql => $checkUserStmtMock,
-            'SELECT id FROM mission_types' => $selectTypesStmtMock, // Используем подстроку
-            // 'INSERT INTO missions ' => $insertStmtMock, // Не ожидается в этом тесте
+            'SELECT id FROM mission_types' => $selectTypesStmtMock,
         ];
-        // --- КОНЕЦ НОВОГО ---
 
         $this->mockConnection->expects($this->exactly(2)) // prepare вызывается 2 раза (проверка юзера, выбор типа)
             ->method('prepare')
@@ -227,4 +216,5 @@ class MissionGenerationServiceTest extends TestCase
         $this->assertNull($mission);
         $this->assertStringContainsString('No suitable mission types found', $error);
     }
+
 }
