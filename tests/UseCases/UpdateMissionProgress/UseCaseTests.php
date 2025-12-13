@@ -40,7 +40,6 @@ class UseCaseTest extends TestCase
         $reward = new Reward('gold', 50);
         $missionType = new MissionType('type_collect_wood', 'Сбор древесины', 'Собирай древесину.', 'Collect N wood', $reward);
 
-        // Создаём миссию с начальным прогрессом 3, цель 10 (предполагаем, что цель хранится в MissionType)
         $mission = new Mission(
             id: $missionId,
             userId: $userId,
@@ -57,7 +56,7 @@ class UseCaseTest extends TestCase
 
         $this->mockMissionTypeRepo->expects($this->once())
             ->method('findById')
-            ->with('type_collect_wood') // ID типа миссии
+            ->with('type_collect_wood') 
             ->willReturn($missionType);
 
         // Ожидаем, что метод update будет вызван с обновлённой миссией
