@@ -12,13 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS mission_types (
     id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL, -- Русское название типа миссии
-    description TEXT, -- Описание типа миссии
-    goal_template VARCHAR(255) NOT NULL, -- Шаблон цели (например, "Collect N items")
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    goal_template VARCHAR(255) NOT NULL,
     reward_data JSON NOT NULL,
     requirements JSON,
     min_level_required INT DEFAULT 1,
-    category VARCHAR(255) NOT NULL -- Категория: Accumulative, Killing, One-Time
+    category VARCHAR(255) NOT NULL 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS missions (
@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS missions (
     FOREIGN KEY (mission_type_id) REFERENCES mission_types(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Вставляем 150+ типов миссий
 INSERT INTO mission_types (id, name, description, goal_template, reward_data, min_level_required, category) VALUES
 -- Накопительные (Accumulative)
 ('type_collect_wood', 'Сбор древесины', 'Собирай древесину.', 'Collect N wood', '{"type": "experience", "amount": 50}', 1, 'Accumulative'),
@@ -125,7 +124,7 @@ INSERT INTO mission_types (id, name, description, goal_template, reward_data, mi
 ('type_win_competition', 'Победа в соревновании', 'Выиграй соревнование по бегу.', 'Win a running competition', '{"type": "gold", "amount": 45}', 5, 'One-Time'),
 ('type_make_alliance', 'Заключение альянса', 'Помоги заключить альянс.', 'Help form an alliance', '{"type": "reputation", "amount": 25}', 9, 'One-Time'),
 
--- Миссии с чёрным юмором
+-- Ивентовые
 ('type_find_peace', 'Поиск мира', 'Попытайся найти мир во время войны. Удачи.', 'Find peace during war', '{"type": "experience", "amount": 999}', 10, 'One-Time'),
 ('type_count_corpses', 'Подсчёт трупов', 'Сосчитай, сколько трупов ты оставил после себя.', 'Count corpses left behind', '{"type": "reputation", "amount": -100}', 1, 'Accumulative'),
 ('type_feed_giants', 'Кормление великанов', 'Принеси великанам еду. Или просто принеси себя.', 'Feed the giants', '{"type": "experience", "amount": 10}', 1, 'One-Time'),
@@ -176,4 +175,5 @@ INSERT INTO mission_types (id, name, description, goal_template, reward_data, mi
 ('type_eat_heart', 'Съесть сердце', 'Съешь чье-то сердце. Оно ещё бьётся.', 'Eat a heart', '{"type": "experience", "amount": 50}', 7, 'One-Time'),
 ('type_find_meaning', 'Найти смысл жизни', 'Найди смысл жизни. Его нет.', 'Find the meaning of life', '{"type": "experience", "amount": 0}', 10, 'One-Time'),
 ('type_kiss_grave', 'Поцеловать могилу', 'Поцелуй надгробие. Покойник доволен.', 'Kiss a grave', '{"type": "reputation", "amount": -1}', 1, 'One-Time'),
+
 ('type_burn_hopes', 'Сжечь надежды', 'Сожги все надежды. Тепло.', 'Burn hopes', '{"type": "experience", "amount": 10}', 2, 'One-Time');
