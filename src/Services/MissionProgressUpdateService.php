@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Entities\Mission; // Предположим, что сущность существует
+use App\Entities\Mission;
 use Doctrine\DBAL\Connection;
 
 class MissionProgressUpdateService
@@ -38,11 +38,7 @@ class MissionProgressUpdateService
         }
 
         // 3. Получить тип миссии, чтобы узнать цель (objective_value)
-        // В оригинальном коде был JOIN, но здесь мы делаем отдельный запрос.
-        // Это не идеально, но для тестирования логики обновления подходит.
         $selectTypeSql = "SELECT objective_value FROM missions WHERE id = ?"; // Берём objective_value из самой миссии
-        // Нет, цель берётся из mission_types. Давай исправим.
-        // Нужно получить objective_value из missions, так как оно там сохраняется при генерации.
         $objectiveValue = $row['objective_value']; // Цель миссии, сохранённая при генерации
 
         // 4. Обновить прогресс
@@ -78,9 +74,10 @@ class MissionProgressUpdateService
             createdAt: new \DateTimeImmutable($updatedRow['created_at']),
             expiresAt: new \DateTimeImmutable($updatedRow['expires_at']),
             rewardsClaimed: (bool)$updatedRow['rewards_claimed'],
-            objectiveValue: (int)$updatedRow['objective_value'] // <-- Включаем цель
+            objectiveValue: (int)$updatedRow['objective_value'] 
         );
 
         return [$updatedMission, null];
     }
+
 }
