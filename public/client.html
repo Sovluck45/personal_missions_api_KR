@@ -185,7 +185,6 @@
             }
         }
 
-        // Эти названия должны соответствовать ID типов миссии из БД (например, type_collect_wood)
         const missionTypeNames = {
             // Накопительные (Accumulative) и Убийства (Killing)
             'type_collect_wood': 'Сбор древесины',
@@ -271,7 +270,7 @@
             'type_win_competition': 'Победа в соревновании',
             'type_make_alliance': 'Заключение альянса',
 
-            // Миссии с чёрным юмором
+            // Миссии ивентовые
             'type_find_peace': 'Поиск мира',
             'type_count_corpses': 'Подсчёт трупов',
             'type_feed_giants': 'Кормление великанов',
@@ -355,8 +354,6 @@
                     return;
                 }
 
-                // --- НОВОЕ: Обновляем списки для обновления и завершения миссий ---
-                // Перед этим, нужно обновить переменную currentMissionsForLists, которая содержит только миссии, доступные для взаимодействия (не завершённые)
                 currentMissionsForLists = currentMissions.filter(mission => mission.status !== 'completed');
 
                 // Обновляем списки для обновления и завершения миссий
@@ -369,7 +366,6 @@
 
                     const typeName = missionTypeNames[mission.missionTypeId] || mission.missionTypeId; // Если тип не найден, оставляем как есть
 
-                    // --- НОВОЕ: Получаем цель миссии (objective) из таблицы mission_types ---
                     const missionObjectives = {
                         // Накопительные (Accumulative) и Убийства (Killing)
                         'type_collect_wood': 'Собирай древесину.',
@@ -455,7 +451,7 @@
                         'type_win_competition': 'Выиграй соревнование по бегу.',
                         'type_make_alliance': 'Помоги заключить альянс.',
 
-                        // Миссии с чёрным юмором
+                        // Миссии ивентовые
                         'type_find_peace': 'Попытайся найти мир во время войны. Удачи.',
                         'type_count_corpses': 'Сосчитай, сколько трупов ты оставил после себя.',
                         'type_feed_giants': 'Принеси великанам еду. Или просто принеси себя.',
@@ -509,15 +505,11 @@
                         'type_burn_hopes': 'Сожги все надежды. Тепло.'
                     };
                     const objective = missionObjectives[mission.missionTypeId] || 'Цель не указана';
-                    // --- КОНЕЦ НОВОГО ---
-
-                    // --- НОВОЕ: Формируем строку прогресса (0 из N) ---
+                    
                     // Используем значение objective_value из БД
                     const maxProgress = mission.objectiveValue; // Цель миссии
                     const progressDisplay = `${mission.progress} из ${maxProgress}`;
-                    // --- КОНЕЦ НОВОГО ---
 
-                    // --- НОВОЕ: Переводим статус на русский ---
                     const statusNames = {
                         'assigned': 'Назначена',
                         'in_progress': 'В процессе',
@@ -526,7 +518,6 @@
                         'expired': 'Просрочена'
                     };
                     const statusName = statusNames[mission.status] || mission.status;
-                    // --- КОНЕЦ НОВОГО ---
 
                     // Отображаем все поля, возвращаемые API
                     missionDiv.innerHTML = `
@@ -675,7 +666,6 @@
                         'Content-Type': 'application/json',
                     },
                     // Не передаём userId, так как он не нужен в новом API для завершения
-                    // body: JSON.stringify({ userId: currentUserId }) // УБРАНО
                 });
 
                 if (!response.ok) {
@@ -702,5 +692,6 @@
     </script>
 
 </body>
+
 
 </html>
