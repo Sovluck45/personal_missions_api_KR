@@ -19,7 +19,8 @@ class Mission
         public readonly \DateTimeImmutable $createdAt,
         public readonly \DateTimeImmutable $expiresAt,
         public bool $rewardsClaimed,
-        public readonly int $objectiveValue // <-- Добавлено
+        public readonly int $objectiveValue
     ) {
     }
+
 }
