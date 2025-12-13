@@ -73,27 +73,23 @@ $app->post('/api/missions/generate', function (Request $request, Response $respo
 
     $connection = $container->get(\Doctrine\DBAL\Connection::class);
 
-    // --- НОВОЕ: Проверяем, существует ли пользователь ---
     $checkUserSql = "SELECT COUNT(*) FROM users WHERE id = ?";
     $checkUserStmt = $connection->prepare($checkUserSql);
     $checkUserStmt->bindValue(1, $userId);
     $userExists = $checkUserStmt->executeQuery()->fetchOne() > 0;
 
     if (!$userExists) {
-        // --- НОВОЕ: Создаём пользователя, если его нет ---
         $insertUserSql = "INSERT INTO users (id, username, level, experience, created_at) VALUES (?, ?, ?, ?, ?)";
         $insertUserStmt = $connection->prepare($insertUserSql);
         $insertUserStmt->bindValue(1, $userId);
-        $insertUserStmt->bindValue(2, $userId); // Используем ID как username
-        $insertUserStmt->bindValue(3, 1); // Начальный уровень
-        $insertUserStmt->bindValue(4, 0); // Начальный опыт
+        $insertUserStmt->bindValue(2, $userId); 
+        $insertUserStmt->bindValue(3, 1);
+        $insertUserStmt->bindValue(4, 0); 
         $insertUserStmt->bindValue(5, (new \DateTimeImmutable())->format('Y-m-d H:i:s'));
         $insertUserStmt->executeStatement();
-        error_log("DEBUG: Created user {$userId}"); // Отладка (можно удалить позже)
+        error_log("DEBUG: Created user {$userId}"); 
     }
-    // --- КОНЕЦ НОВОГО ---
 
-    // --- НОВОЕ: Генерируем случайный тип миссии ---
     // Получаем список всех доступных типов миссий
     $selectTypesSql = "SELECT id FROM mission_types";
     $selectTypesStmt = $connection->prepare($selectTypesSql);
@@ -106,8 +102,6 @@ $app->post('/api/missions/generate', function (Request $request, Response $respo
     // Выбираем случайный тип миссии
     $defaultMissionTypeId = $missionTypeIds[array_rand($missionTypeIds)];
 
-    // --- НОВОЕ: Генерируем случайное количество для задания ---
-    // Для простоты, используем маппинг. В реальном проекте это нужно получать из БД.
     $missionObjectives = [
     // Накопительные (Accumulative) и Убийства (Killing)
     'type_collect_wood' => [5, 15],
@@ -124,12 +118,12 @@ $app->post('/api/missions/generate', function (Request $request, Response $respo
     'type_mine_iron' => [4, 10],
     'type_farm_wheat' => [20, 50],
     'type_collect_flowers' => [15, 25],
-    'type_kill_dragons' => [1, 1], // Предположим, редкая миссия
+    'type_kill_dragons' => [1, 1], 
     'type_mine_gold' => [2, 6],
     'type_gather_mushrooms' => [12, 18],
     'type_slay_undead' => [5, 15],
     'type_hunt_deer' => [4, 8],
-    'type_mine_diamonds' => [1, 2], // Очень редкий ресурс
+    'type_mine_diamonds' => [1, 2], 
     'type_collect_berries' => [20, 40],
     'type_kill_spiders' => [6, 12],
     'type_mine_copper' => [8, 16],
@@ -193,63 +187,62 @@ $app->post('/api/missions/generate', function (Request $request, Response $respo
     'type_win_competition' => [1, 1],
     'type_make_alliance' => [1, 1],
 
-    // Миссии с чёрным юмором (примеры, можно настроить индивидуально)
-    'type_find_peace' => [1, 1], // Разовая
-    'type_count_corpses' => [1, 1], // Разовая
-    'type_feed_giants' => [1, 1], // Разовая
-    'type_clean_graveyard' => [1, 1], // Разовая
-    'type_rescue_drowning_man' => [1, 1], // Разовая
-    'type_buy_horse' => [1, 1], // Разовая
-    'type_find_true_love' => [1, 1], // Разовая
-    'type_steal_from_poor' => [1, 1], // Разовая
-    'type_help_beggar' => [1, 1], // Разовая
-    'type_build_wall' => [5, 10], // Накопительная (например, положить N кирпичей)
-    'type_dance_with_deaths' => [1, 1], // Разовая
-    'type_heal_the_dead' => [1, 1], // Разовая
-    'type_count_stars' => [1, 1], // Разовая
-    'type_drink_poison' => [1, 1], // Разовая
-    'type_survive_nightmare' => [1, 1], // Разовая
-    'type_talk_to_gravestone' => [1, 1], // Разовая
-    'type_find_happiness' => [1, 1], // Разовая
-    'type_eat_soup' => [1, 1], // Разовая
-    'type_watch_sunrise' => [1, 1], // Разовая
-    'type_hug_a_bear' => [1, 1], // Разовая
-    'type_kiss_a_skull' => [1, 1], // Разовая
-    'type_dig_own_grave' => [1, 1], // Разовая
-    'type_burn_books' => [10, 20], // Накопительная
-    'type_plant_corpses' => [5, 10], // Накопительная
-    'type_listen_to_silence' => [1, 1], // Разовая
-    'type_count_deaths' => [1, 1], // Разовая
-    'type_cure_loneliness' => [1, 1], // Разовая
-    'type_drown_in_tears' => [1, 1], // Разовая
-    'type_eat_ashes' => [1, 1], // Разовая
-    'type_kiss_death' => [1, 1], // Разовая
-    'type_hunt_yourself' => [1, 1], // Разовая
-    'type_dream_of_peace' => [1, 1], // Разовая
-    'type_cry_for_no_reason' => [1, 1], // Разовая
-    'type_burn_memories' => [1, 1], // Разовая
-    'type_laugh_at_funeral' => [1, 1], // Разовая
-    'type_feed_cats_corpses' => [5, 10], // Накопительная
-    'type_find_light' => [1, 1], // Разовая
-    'type_bury_your_past' => [1, 1], // Разовая
-    'type_sing_to_the_dead' => [1, 1], // Разовая
-    'type_drink_blood' => [1, 1], // Разовая
-    'type_sleep_in_graveyard' => [1, 1], // Разовая
-    'type_hug_a_zombie' => [1, 1], // Разовая
-    'type_count_graves' => [1, 1], // Разовая
-    'type_dance_on_graves' => [1, 1], // Разовая
-    'type_cook_human_flesh' => [1, 1], // Разовая
-    'type_watch_world_burn' => [1, 1], // Разовая
-    'type_pray_to_void' => [1, 1], // Разовая
-    'type_eat_heart' => [1, 1], // Разовая
-    'type_find_meaning' => [1, 1], // Разовая
-    'type_kiss_grave' => [1, 1], // Разовая
-    'type_burn_hopes' => [1, 1], // Разовая
+    // Миссии ивентовые
+    'type_find_peace' => [1, 1],
+    'type_count_corpses' => [1, 1], 
+    'type_feed_giants' => [1, 1], 
+    'type_clean_graveyard' => [1, 1], 
+    'type_rescue_drowning_man' => [1, 1], 
+    'type_buy_horse' => [1, 1], 
+    'type_find_true_love' => [1, 1], 
+    'type_steal_from_poor' => [1, 1], 
+    'type_help_beggar' => [1, 1],
+    'type_build_wall' => [5, 10], 
+    'type_dance_with_deaths' => [1, 1], 
+    'type_heal_the_dead' => [1, 1], 
+    'type_count_stars' => [1, 1], 
+    'type_drink_poison' => [1, 1], 
+    'type_survive_nightmare' => [1, 1],
+    'type_talk_to_gravestone' => [1, 1],
+    'type_find_happiness' => [1, 1],
+    'type_eat_soup' => [1, 1], 
+    'type_watch_sunrise' => [1, 1], 
+    'type_hug_a_bear' => [1, 1],
+    'type_kiss_a_skull' => [1, 1], 
+    'type_dig_own_grave' => [1, 1], 
+    'type_burn_books' => [10, 20], 
+    'type_plant_corpses' => [5, 10], 
+    'type_listen_to_silence' => [1, 1], 
+    'type_count_deaths' => [1, 1], 
+    'type_cure_loneliness' => [1, 1], 
+    'type_drown_in_tears' => [1, 1], 
+    'type_eat_ashes' => [1, 1],
+    'type_kiss_death' => [1, 1], 
+    'type_hunt_yourself' => [1, 1], 
+    'type_dream_of_peace' => [1, 1], 
+    'type_cry_for_no_reason' => [1, 1],
+    'type_burn_memories' => [1, 1],
+    'type_laugh_at_funeral' => [1, 1], 
+    'type_feed_cats_corpses' => [5, 10], 
+    'type_find_light' => [1, 1],
+    'type_bury_your_past' => [1, 1], 
+    'type_sing_to_the_dead' => [1, 1], 
+    'type_drink_blood' => [1, 1], 
+    'type_sleep_in_graveyard' => [1, 1], 
+    'type_hug_a_zombie' => [1, 1], 
+    'type_count_graves' => [1, 1],
+    'type_dance_on_graves' => [1, 1], 
+    'type_cook_human_flesh' => [1, 1],
+    'type_watch_world_burn' => [1, 1], 
+    'type_pray_to_void' => [1, 1], 
+    'type_eat_heart' => [1, 1], 
+    'type_find_meaning' => [1, 1], 
+    'type_kiss_grave' => [1, 1], 
+    'type_burn_hopes' => [1, 1], 
 ];
-    $objectiveRange = $missionObjectives[$defaultMissionTypeId] ?? [5, 15]; // По умолчанию 5-15
+    $objectiveRange = $missionObjectives[$defaultMissionTypeId] ?? [5, 15];
     $objectiveValue = rand($objectiveRange[0], $objectiveRange[1]);
 
-    // --- НОВОЕ: Создаём миссию с случайным количеством ---
     $missionId = uniqid();
     $expiresAt = (new \DateTimeImmutable())->modify('+1 day')->format('Y-m-d H:i:s');
 
@@ -266,20 +259,18 @@ $app->post('/api/missions/generate', function (Request $request, Response $respo
     $stmt->bindValue(8, 0);
     $stmt->bindValue(9, $objectiveValue); // Сохраняем случайное значение цели
     $stmt->executeStatement();
-
-    // --- НОВОЕ: Получаем имя типа миссии из mission_types ---
+    
     $selectTypeNameSql = "SELECT name FROM mission_types WHERE id = ?";
     $selectTypeNameStmt = $connection->prepare($selectTypeNameSql);
     $selectTypeNameStmt->bindValue(1, $defaultMissionTypeId);
-    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne(); // Получаем русское название типа
-    // --- КОНЕЦ НОВОГО ---
+    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne(); 
 
     // Формируем ответ
     $payload = [
         'id' => $missionId,
         'userId' => $userId,
         'missionTypeId' => $defaultMissionTypeId,
-        'missionName' => $typeName, // Добавляем русское название типа
+        'missionName' => $typeName, 
         'status' => 'assigned',
         'progress' => 0,
         'createdAt' => (new \DateTimeImmutable())->format('c'),
@@ -334,7 +325,6 @@ $app->post('/api/missions/{missionId}/progress', function (Request $request, Res
 
     // Обновляем прогресс миссии в БД
     $connection = $container->get(\Doctrine\DBAL\Connection::class);
-    // --- НОВОЕ: Сначала получаем текущую миссию, чтобы узнать её тип и цель ---
     $selectSql = "SELECT * FROM missions WHERE id = ?";
     $selectStmt = $connection->prepare($selectSql);
     $selectStmt->bindValue(1, $missionId);
@@ -346,16 +336,13 @@ $app->post('/api/missions/{missionId}/progress', function (Request $request, Res
         return $response->withHeader('Content-Type', 'application/json; charset=utf-8')->withStatus(404);
     }
 
-    // --- НОВОЕ: Получаем цель миссии из БД (поле objective_value) ---
-    $maxProgress = $row['objective_value']; // Цель миссии хранится в БД
+    $maxProgress = $row['objective_value']; 
 
-    // --- НОВОЕ: Рассчитываем новый прогресс с ограничением ---
     $newProgress = $row['progress'] + $progressDelta;
     if ($newProgress > $maxProgress) {
-        $newProgress = $maxProgress; // Ограничиваем максимальным значением
+        $newProgress = $maxProgress; 
     }
 
-    // --- НОВОЕ: Обновляем прогресс в БД ---
     $updateSql = "UPDATE missions SET progress = ? WHERE id = ?";
     $updateStmt = $connection->prepare($updateSql);
     $updateStmt->bindValue(1, $newProgress);
@@ -374,18 +361,16 @@ $app->post('/api/missions/{missionId}/progress', function (Request $request, Res
         return $response->withHeader('Content-Type', 'application/json; charset=utf-8')->withStatus(404);
     }
 
-    // --- НОВОЕ: Получаем имя типа миссии из mission_types ---
     $selectTypeNameSql = "SELECT name FROM mission_types WHERE id = ?";
     $selectTypeNameStmt = $connection->prepare($selectTypeNameSql);
     $selectTypeNameStmt->bindValue(1, $row['mission_type_id']);
-    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne(); // Получаем русское название типа
-    // --- КОНЕЦ НОВОГО ---
+    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne();
 
     $payload = [
         'id' => $row['id'],
         'userId' => $row['user_id'],
         'missionTypeId' => $row['mission_type_id'],
-        'missionName' => $typeName, // Добавляем русское название типа
+        'missionName' => $typeName, 
         'status' => $row['status'],
         'progress' => $row['progress'],
         'createdAt' => $row['created_at'],
@@ -419,18 +404,16 @@ $app->post('/api/missions/{missionId}/complete', function (Request $request, Res
         return $response->withHeader('Content-Type', 'application/json; charset=utf-8')->withStatus(404);
     }
 
-    // --- НОВОЕ: Получаем имя типа миссии из mission_types ---
     $selectTypeNameSql = "SELECT name FROM mission_types WHERE id = ?";
     $selectTypeNameStmt = $connection->prepare($selectTypeNameSql);
     $selectTypeNameStmt->bindValue(1, $row['mission_type_id']);
-    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne(); // Получаем русское название типа
-    // --- КОНЕЦ НОВОГО ---
+    $typeName = $selectTypeNameStmt->executeQuery()->fetchOne(); 
 
     $payload = [
         'id' => $row['id'],
         'userId' => $row['user_id'],
         'missionTypeId' => $row['mission_type_id'],
-        'missionName' => $typeName, // Добавляем русское название типа
+        'missionName' => $typeName,
         'status' => $row['status'],
         'progress' => $row['progress'],
         'createdAt' => $row['created_at'],
@@ -448,4 +431,5 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
 });
 
 // Запуск приложения
+
 $app->run();
