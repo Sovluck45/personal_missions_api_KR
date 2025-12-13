@@ -20,14 +20,14 @@ class MissionTest extends TestCase
             id: 'm1',
             userId: 'u1',
             missionTypeId: 't1',
-            expiresAt: $pastDate // <-- Исправлено: добавлен expiresAt
+            expiresAt: $pastDate
         );
 
         $missionNotExpired = new Mission(
             id: 'm2',
             userId: 'u2',
             missionTypeId: 't2',
-            expiresAt: $futureDate // <-- Исправлено: добавлен expiresAt
+            expiresAt: $futureDate 
         );
 
         $this->assertTrue($missionExpired->isExpired());
@@ -41,7 +41,7 @@ class MissionTest extends TestCase
             userId: 'u1',
             missionTypeId: 't1',
             status: Mission::STATUS_COMPLETED,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day')
         );
 
         $missionInProgress = new Mission(
@@ -49,7 +49,7 @@ class MissionTest extends TestCase
             userId: 'u2',
             missionTypeId: 't2',
             status: Mission::STATUS_IN_PROGRESS,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day') 
         );
 
         $this->assertTrue($missionCompleted->isCompleted());
@@ -62,20 +62,18 @@ class MissionTest extends TestCase
             id: 'm1',
             userId: 'u1',
             missionTypeId: 't1',
-            status: Mission::STATUS_ASSIGNED, // Статус assigned
+            status: Mission::STATUS_ASSIGNED,
             progress: 0,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day') 
         );
 
-        // Обновляем прогресс, но не достигаем цели (10)
         $mission->updateProgress(3, 10);
         $this->assertSame(3, $mission->getProgress());
-        $this->assertSame(Mission::STATUS_IN_PROGRESS, $mission->getStatus()); // Должно измениться на in_progress
+        $this->assertSame(Mission::STATUS_IN_PROGRESS, $mission->getStatus());
 
-        // Обновляем прогресс, достигаем цель (3 + 7 = 10)
         $mission->updateProgress(7, 10);
         $this->assertSame(10, $mission->getProgress());
-        $this->assertSame(Mission::STATUS_COMPLETED, $mission->getStatus()); // Должно измениться на completed
+        $this->assertSame(Mission::STATUS_COMPLETED, $mission->getStatus()); 
     }
 
     public function testUpdateProgressCannotUpdateCompleted(): void
@@ -86,7 +84,7 @@ class MissionTest extends TestCase
             missionTypeId: 't1',
             status: Mission::STATUS_COMPLETED,
             progress: 10,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day') 
         );
 
         $this->expectException(\LogicException::class);
@@ -104,7 +102,7 @@ class MissionTest extends TestCase
             missionTypeId: 't1',
             status: Mission::STATUS_EXPIRED,
             progress: 5,
-            expiresAt: $pastDate // <-- Исправлено: добавлен expiresAt
+            expiresAt: $pastDate 
         );
 
         $this->expectException(\LogicException::class);
@@ -121,7 +119,7 @@ class MissionTest extends TestCase
             missionTypeId: 't1',
             status: Mission::STATUS_COMPLETED,
             progress: 10,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day') 
         );
 
         $this->assertFalse($mission->isRewardsClaimed());
@@ -139,7 +137,7 @@ class MissionTest extends TestCase
             missionTypeId: 't1',
             status: Mission::STATUS_IN_PROGRESS,
             progress: 5,
-            expiresAt: new \DateTimeImmutable('+1 day') // <-- Исправлено: добавлен expiresAt
+            expiresAt: new \DateTimeImmutable('+1 day')
         );
 
         $this->expectException(\LogicException::class);
@@ -157,7 +155,7 @@ class MissionTest extends TestCase
             status: Mission::STATUS_COMPLETED,
             progress: 10,
             expiresAt: new \DateTimeImmutable('+1 day'),
-            rewardsClaimed: true // Уже получена
+            rewardsClaimed: true 
         );
 
         $this->expectException(\LogicException::class);
@@ -202,4 +200,5 @@ class MissionTest extends TestCase
         $this->assertFalse($completedClaimed->canClaimRewards());
         $this->assertFalse($notCompleted->canClaimRewards());
     }
+
 }
